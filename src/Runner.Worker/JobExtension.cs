@@ -74,6 +74,9 @@ namespace GitHub.Runner.Worker
                     context.Start();
                     context.Debug($"Starting: Set up job");
                     context.Output($"Current runner version: '{BuildConstants.RunnerPackage.Version}'");
+                    context.Output($"THIS RUNNER LABEL IS DEPRECATED");
+                    context.Output($"PLEASE USE hephaestus-nonprod-small or one of the");
+                    context.Output($"https://confluence.wiley.com/display/DEVOPS/GitHub+Action+-+Hephaestus#GitHubActionHephaestus-Runnersnames");
 
                     var setting = HostContext.GetService<IConfigurationStore>().GetSettings();
                     var credFile = HostContext.GetConfigFile(WellKnownConfigFile.Credentials);
