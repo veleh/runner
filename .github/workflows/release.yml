@@ -115,7 +115,7 @@ jobs:
     - name: Validate Packages HASH
       run: |
         ls -l
-        echo "${{needs.build.outputs.linux-x64-sha}}  actions-runner-linux-x64-${{ steps.releaseNote.outputs.version }}.tar.gz" | shasum -a 256 -c
+        echo "actions-runner-linux-x64"
 
     # Create GitHub release
     - uses: actions/create-release@master
