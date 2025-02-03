@@ -1,0 +1,143 @@
+name: Runner CD
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - releaseVersion
+
+jobs:
+  check:
+    if: startsWith(github.ref, 'refs/heads/releases/') || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # Make sure ./releaseVersion match ./src/runnerversion
+    # Query GitHub release ensure version is not used
+    - name: Check version
+      uses: actions/github-script@0.3.0
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const core = require('@actions/core')
+          const fs = require('fs');
+          const runnerVersion = fs.readFileSync('${{ github.workspace }}/src/runnerversion', 'utf8').replace(/\n$/g, '')
+          const releaseVersion = fs.readFileSync('${{ github.workspace }}/releaseVersion', 'utf8').replace(/\n$/g, '')
+          if (runnerVersion != releaseVersion) {
+            console.log('Request Release Version: ' + releaseVersion + '\nCurrent Runner Version: ' + runnerVersion)
+            core.setFailed('Version mismatch! Make sure ./releaseVersion match ./src/runnerVersion')
+            return
+          }
+          try {
+            const release = await github.repos.getReleaseByTag({
+              owner: '${{ github.event.repository.owner.name }}',
+              repo: '${{ github.event.repository.name }}',
+              tag: 'v' + runnerVersion
+            })
+            core.setFailed('Release with same tag already created: ' + release.data.html_url)
+          } catch (e) {
+            // We are good to create the release if release with same tag doesn't exists
+            if (e.status != 404) {
+              throw e
+            }
+          }
+
+  build:
+    needs: check
+    outputs:
+      linux-x64-sha: ${{ steps.sha.outputs.linux-x64-sha256 }}
+    strategy:
+      matrix:
+        runtime: [ linux-x64 ]
+        include:
+        - runtime: linux-x64
+          os: ubuntu-latest
+          devScript: ./dev.sh
+
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+
+    # Build runner layout
+    - name: Build & Layout Release
+      run: |
+        ${{ matrix.devScript }} layout Release ${{ matrix.runtime }}
+      working-directory: src
+
+    # Create runner package tar.gz/zip
+    - name: Package Release
+      if: github.event_name != 'pull_request'
+      run: |
+        ${{ matrix.devScript }} package Release ${{ matrix.runtime }}
+      working-directory: src
+
+
+    # Upload runner package tar.gz/zip as artifact.
+    - name: Publish Artifact
+      if: github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: runner-packages-${{ matrix.runtime }}
+        path: |
+          _package
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v4
+
+    # Download runner package tar.gz/zip produced by 'build' job
+    - name: Download Artifact (linux-x64)
+      uses: actions/download-artifact@v4
+      with:
+        name: runner-packages-linux-x64
+        path: ./
+
+    # Create ReleaseNote file
+    - name: Create ReleaseNote
+      id: releaseNote
+      uses: actions/github-script@0.3.0
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const core = require('@actions/core')
+          const fs = require('fs');
+          const runnerVersion = fs.readFileSync('${{ github.workspace }}/src/runnerversion', 'utf8').replace(/\n$/g, '')
+          var releaseNote = fs.readFileSync('${{ github.workspace }}/releaseNote.md', 'utf8').replace(/<RUNNER_VERSION>/g, runnerVersion)
+          releaseNote = releaseNote.replace(/<LINUX_X64_SHA>/g, '${{needs.build.outputs.linux-x64-sha}}')
+          console.log(releaseNote)
+          core.setOutput('version', runnerVersion);
+          core.setOutput('note', releaseNote);
+
+    - name: Validate Packages HASH
+      run: |
+        ls -l
+        echo "${{needs.build.outputs.linux-x64-sha}}  actions-runner-linux-x64-${{ steps.releaseNote.outputs.version }}.tar.gz" | shasum -a 256 -c
+
+    # Create GitHub release
+    - uses: actions/create-release@master
+      id: createRelease
+      name: Create ${{ steps.releaseNote.outputs.version }} Runner Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ steps.releaseNote.outputs.version }}"
+        release_name: "v${{ steps.releaseNote.outputs.version }}"
+        body: |
+          ${{ steps.releaseNote.outputs.note }}
+
+    # Upload release assets (full runner packages)
+    - name: Upload Release Asset (linux-x64)
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.createRelease.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/actions-runner-linux-x64-${{ steps.releaseNote.outputs.version }}.tar.gz
+        asset_name: actions-runner-linux-x64-${{ steps.releaseNote.outputs.version }}.tar.gz
+        asset_content_type: application/octet-stream
+
+      
