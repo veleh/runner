@@ -73,10 +73,17 @@ namespace GitHub.Runner.Worker
                 {
                     context.Start();
                     context.Debug($"Starting: Set up job");
-                    context.Output($"Current runner version: '{BuildConstants.RunnerPackage.Version}'");
-                    context.Output($"THIS RUNNER LABEL IS DEPRECATED");
-                    context.Output($"PLEASE USE hephaestus-nonprod-small or one of the");
+                    context.Output($"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                    context.Output($"PLEASE USE 'hephaestus-nonprod-small' or one of the label from the link below");
                     context.Output($"https://confluence.wiley.com/display/DEVOPS/GitHub+Action+-+Hephaestus#GitHubActionHephaestus-Runnersnames");
+                    context.Output($"Current runner version: '{BuildConstants.RunnerPackage.Version}'");
 
                     var setting = HostContext.GetService<IConfigurationStore>().GetSettings();
                     var credFile = HostContext.GetConfigFile(WellKnownConfigFile.Credentials);
@@ -638,6 +645,16 @@ namespace GitHub.Runner.Worker
                     if (_processCleanup)
                     {
                         context.Output("Cleaning up orphan processes");
+                        context.Output($"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"<<<<<<<<<<<<<<<<THIS RUNNER LABEL IS DEPRECATED>>>>>>>>>>>>>>>>");
+                        context.Output($"## _______PLEASE USE 'hephaestus-nonprod-small' OR ONE OF THE LABEL FROM THE LINK BELOW:__________________");
+                        context.Output($"https://confluence.wiley.com/display/DEVOPS/GitHub+Action+-+Hephaestus#GitHubActionHephaestus-Runnersnames");
 
                         // Only check environment variable for any process that doesn't run before we invoke our process.
                         Dictionary<int, Process> currentProcesses = SnapshotProcesses();
